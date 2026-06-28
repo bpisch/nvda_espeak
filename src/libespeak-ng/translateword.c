@@ -260,7 +260,7 @@ int TranslateWord3(Translator *tr, char *word_start, WORD_TAB *wtab, char *word_
 		strcpy(word_phonemes, phonemes);
 		if (wflags & FLAG_TRANSLATOR2)
 			return 0;
-
+//*x*
 		addPluralSuffixes(wflags, tr, last_char, word_phonemes);
 		return dictionary_flags[0] & FLAG_SKIPWORDS; // for "b.c.d"
 	} else if (found == false) {
@@ -873,7 +873,7 @@ static int TranslateLetter(Translator *tr, char *word, char *phonemes, int contr
 		// speak the name of the alphabet
 		current_alphabet = alphabet;
 		if ((alphabet != NULL) && !(al_flags & AL_DONT_NAME) && (al_offset != translator->letter_bits_offset)) {
-			if ((al_flags & AL_DONT_NAME) || (al_offset == translator->langopts.alt_alphabet) || (al_offset == translator->langopts.our_alphabet)) {
+			if ((al_flags & AL_DONT_NAME) || (al_offset == translator->langopts.alt_alphabet) || (al_offset == translator->langopts.our_alphabet) || (control & 1)) {
 				// don't say the alphabet name
 			} else {
 				ph_buf2[0] = 0;
