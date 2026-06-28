@@ -873,7 +873,7 @@ static int TranslateLetter(Translator *tr, char *word, char *phonemes, int contr
 		// speak the name of the alphabet
 		current_alphabet = alphabet;
 		if ((alphabet != NULL) && !(al_flags & AL_DONT_NAME) && (al_offset != translator->letter_bits_offset)) {
-			if ((al_flags & AL_DONT_NAME) || (al_offset == translator->langopts.alt_alphabet) || (al_offset == translator->langopts.our_alphabet) || (control & 1)) {
+			if ((al_flags & AL_DONT_NAME) || (al_offset == translator->langopts.alt_alphabet) || (al_offset == translator->langopts.our_alphabet)) {
 				// don't say the alphabet name
 			} else {
 				ph_buf2[0] = 0;
@@ -919,45 +919,54 @@ static int TranslateLetter(Translator *tr, char *word, char *phonemes, int contr
 
 			// speak in the language for this alphabet (or English)
 			char word_buf[5];
-			ph_buf[2] = SetTranslator3(WordToString2(word_buf, language));
 
-			if (translator3 != NULL) {
-				int code;
-				if (((code = letter - 0xac00) >= 0) && (letter <= 0xd7af)) {
-					// Special case for Korean letters.
-					// break a syllable hangul into 2 or 3 individual jamo
-
-					hangul_buf[0] = ' ';
-					p3 = &hangul_buf[1];
-					int initial;
-					if ((initial = (code/28)/21) != 11) {
-						p3 += utf8_out(initial + 0x1100, p3);
-					}
-					utf8_out(((code/28) % 21) + 0x1161, p3); // medial
-					utf8_out((code % 28) + 0x11a7, &p3[3]); // final
-					p3[6] = ' ';
-					p3[7] = 0;
-					ph_buf[3] = 0;
-					TranslateRules(translator3, &hangul_buf[1], &ph_buf[3], sizeof(ph_buf)-3, NULL, 0, NULL);
-					SetWordStress(translator3, &ph_buf[3], NULL, -1, 0);
-				} else
-					LookupLetter(translator3, letter, word[n_bytes], &ph_buf[3], control & 1);
-
-				if (ph_buf[3] == phonSWITCH) {
-					// another level of language change
-					ph_buf[2] = SetTranslator3(&ph_buf[4]);
-					LookupLetter(translator3, letter, word[n_bytes], &ph_buf[3], control & 1);
+			if (control & 1) {
+				SetTranslator3(WordToString2(word_buf, language));
+				if (translator3 != NULL) {
+					LookupLetter(translator3, letter, word[n_bytes], ph_buf, control & 1);
+					SelectPhonemeTable(voice->phoneme_tab_ix);
 				}
+			} else {
+				ph_buf[2] = SetTranslator3(WordToString2(word_buf, language));
 
-				SelectPhonemeTable(voice->phoneme_tab_ix); // revert to original phoneme table
+				if (translator3 != NULL) {
+					int code;
+					if (((code = letter - 0xac00) >= 0) && (letter <= 0xd7af)) {
+						// Special case for Korean letters.
+						// break a syllable hangul into 2 or 3 individual jamo
 
-				if (ph_buf[3] != 0) {
-					ph_buf[0] = phonPAUSE;
-					ph_buf[1] = phonSWITCH;
-					len = strlen(&ph_buf[3]) + 3;
-					ph_buf[len] = phonSWITCH; // switch back
-					ph_buf[len+1] = tr->phoneme_tab_ix;
-					ph_buf[len+2] = 0;
+						hangul_buf[0] = ' ';
+						p3 = &hangul_buf[1];
+						int initial;
+						if ((initial = (code/28)/21) != 11) {
+							p3 += utf8_out(initial + 0x1100, p3);
+						}
+						utf8_out(((code/28) % 21) + 0x1161, p3); // medial
+						utf8_out((code % 28) + 0x11a7, &p3[3]); // final
+						p3[6] = ' ';
+						p3[7] = 0;
+						ph_buf[3] = 0;
+						TranslateRules(translator3, &hangul_buf[1], &ph_buf[3], sizeof(ph_buf)-3, NULL, 0, NULL);
+						SetWordStress(translator3, &ph_buf[3], NULL, -1, 0);
+					} else
+						LookupLetter(translator3, letter, word[n_bytes], &ph_buf[3], control & 1);
+
+					if (ph_buf[3] == phonSWITCH) {
+						// another level of language change
+						ph_buf[2] = SetTranslator3(&ph_buf[4]);
+						LookupLetter(translator3, letter, word[n_bytes], &ph_buf[3], control & 1);
+					}
+
+					SelectPhonemeTable(voice->phoneme_tab_ix); // revert to original phoneme table
+
+					if (ph_buf[3] != 0) {
+						ph_buf[0] = phonPAUSE;
+						ph_buf[1] = phonSWITCH;
+						len = strlen(&ph_buf[3]) + 3;
+						ph_buf[len] = phonSWITCH; // switch back
+						ph_buf[len+1] = tr->phoneme_tab_ix;
+						ph_buf[len+2] = 0;
+					}
 				}
 			}
 		}
