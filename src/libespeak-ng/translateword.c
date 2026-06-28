@@ -869,7 +869,7 @@ static int TranslateLetter(Translator *tr, char *word, char *phonemes, int contr
 		al_flags = alphabet->flags;
 	}
 
-	if (alphabet != current_alphabet) {
+	if (!(control & 1) && (alphabet != current_alphabet)) {
 		// speak the name of the alphabet
 		current_alphabet = alphabet;
 		if ((alphabet != NULL) && !(al_flags & AL_DONT_NAME) && (al_offset != translator->letter_bits_offset)) {
